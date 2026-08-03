@@ -9864,6 +9864,63 @@ static void VULKAN_ReleaseFence(
     }
 }
 
+// Experimental project timestamp extension. Behavior lands after scaffold review.
+
+static bool VULKAN_GetGPUTimestampProperties(
+    SDL_GPUDevice *device,
+    CARP_SDL_GPUTimestampProperties *outProperties)
+{
+    (void)device;
+    (void)outProperties;
+    return SDL_SetError("Vulkan GPU timestamp queries are not implemented");
+}
+
+static void *VULKAN_CreateGPUTimestampQueryPool(
+    SDL_GPUDevice *device,
+    Uint32 queryCount)
+{
+    (void)device;
+    (void)queryCount;
+    SDL_SetError("Vulkan GPU timestamp queries are not implemented");
+    return NULL;
+}
+
+static void VULKAN_ReleaseGPUTimestampQueryPool(
+    SDL_GPUDevice *device,
+    void *queryPool)
+{
+    (void)device;
+    (void)queryPool;
+}
+
+static bool VULKAN_WriteGPUTimestamp(
+    SDL_GPUCommandBuffer *commandBuffer,
+    void *queryPool,
+    Uint32 queryIndex)
+{
+    (void)commandBuffer;
+    (void)queryPool;
+    (void)queryIndex;
+    return SDL_SetError("Vulkan GPU timestamp queries are not implemented");
+}
+
+static bool VULKAN_CopyGPUTimestampResults(
+    SDL_GPUCopyPass *copyPass,
+    void *queryPool,
+    Uint32 firstQuery,
+    Uint32 queryCount,
+    SDL_GPUBuffer *destination,
+    Uint32 destinationOffset)
+{
+    (void)copyPass;
+    (void)queryPool;
+    (void)firstQuery;
+    (void)queryCount;
+    (void)destination;
+    (void)destinationOffset;
+    return SDL_SetError("Vulkan GPU timestamp queries are not implemented");
+}
+
 static WindowData *VULKAN_INTERNAL_FetchWindowData(
     SDL_Window *window)
 {

@@ -24,6 +24,7 @@
 #ifndef SDL_GPU_DRIVER_H
 #define SDL_GPU_DRIVER_H
 
+#include <SDL3/SDL_gpu_timestamp_ext.h>
 #include <SDL3/SDL_openxr.h>
 
 // GraphicsDevice Limits
@@ -1097,6 +1098,31 @@ struct SDL_GPUDevice
         SDL_GPURenderer *driverData,
         SDL_GPUFence *fence);
 
+    bool (*GetGPUTimestampProperties)(
+        SDL_GPUDevice *device,
+        CARP_SDL_GPUTimestampProperties *outProperties);
+
+    void *(*CreateGPUTimestampQueryPool)(
+        SDL_GPUDevice *device,
+        Uint32 queryCount);
+
+    void (*ReleaseGPUTimestampQueryPool)(
+        SDL_GPUDevice *device,
+        void *queryPool);
+
+    bool (*WriteGPUTimestamp)(
+        SDL_GPUCommandBuffer *commandBuffer,
+        void *queryPool,
+        Uint32 queryIndex);
+
+    bool (*CopyGPUTimestampResults)(
+        SDL_GPUCopyPass *copyPass,
+        void *queryPool,
+        Uint32 firstQuery,
+        Uint32 queryCount,
+        SDL_GPUBuffer *destination,
+        Uint32 destinationOffset);
+
     // Feature Queries
 
     bool (*SupportsTextureFormat)(
@@ -1214,6 +1240,11 @@ struct SDL_GPUDevice
     ASSIGN_DRIVER_FUNC(WaitForFences, name)                 \
     ASSIGN_DRIVER_FUNC(QueryFence, name)                    \
     ASSIGN_DRIVER_FUNC(ReleaseFence, name)                  \
+    ASSIGN_DRIVER_FUNC(GetGPUTimestampProperties, name)     \
+    ASSIGN_DRIVER_FUNC(CreateGPUTimestampQueryPool, name)   \
+    ASSIGN_DRIVER_FUNC(ReleaseGPUTimestampQueryPool, name)  \
+    ASSIGN_DRIVER_FUNC(WriteGPUTimestamp, name)             \
+    ASSIGN_DRIVER_FUNC(CopyGPUTimestampResults, name)       \
     ASSIGN_DRIVER_FUNC(SupportsTextureFormat, name)         \
     ASSIGN_DRIVER_FUNC(SupportsSampleCount, name)
 

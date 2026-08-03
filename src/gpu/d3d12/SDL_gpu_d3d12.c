@@ -1598,6 +1598,61 @@ static void D3D12_ReleaseFence(
     }
 }
 
+static bool D3D12_GetGPUTimestampProperties(
+    SDL_GPUDevice *device,
+    CARP_SDL_GPUTimestampProperties *outProperties)
+{
+    (void)device;
+    (void)outProperties;
+    return SDL_SetError("D3D12 GPU timestamp queries are unsupported by this extension");
+}
+
+static void *D3D12_CreateGPUTimestampQueryPool(
+    SDL_GPUDevice *device,
+    Uint32 queryCount)
+{
+    (void)device;
+    (void)queryCount;
+    SDL_SetError("D3D12 GPU timestamp queries are unsupported by this extension");
+    return NULL;
+}
+
+static void D3D12_ReleaseGPUTimestampQueryPool(
+    SDL_GPUDevice *device,
+    void *queryPool)
+{
+    (void)device;
+    (void)queryPool;
+}
+
+static bool D3D12_WriteGPUTimestamp(
+    SDL_GPUCommandBuffer *commandBuffer,
+    void *queryPool,
+    Uint32 queryIndex)
+{
+    (void)commandBuffer;
+    (void)queryPool;
+    (void)queryIndex;
+    return SDL_SetError("D3D12 GPU timestamp queries are unsupported by this extension");
+}
+
+static bool D3D12_CopyGPUTimestampResults(
+    SDL_GPUCopyPass *copyPass,
+    void *queryPool,
+    Uint32 firstQuery,
+    Uint32 queryCount,
+    SDL_GPUBuffer *destination,
+    Uint32 destinationOffset)
+{
+    (void)copyPass;
+    (void)queryPool;
+    (void)firstQuery;
+    (void)queryCount;
+    (void)destination;
+    (void)destinationOffset;
+    return SDL_SetError("D3D12 GPU timestamp queries are unsupported by this extension");
+}
+
 static bool D3D12_QueryFence(
     SDL_GPURenderer *driverData,
     SDL_GPUFence *fence)

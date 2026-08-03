@@ -419,6 +419,7 @@ add_sdl_test_executable(testgeometry TESTUTILS SOURCES testgeometry.c NAME83 geo
 add_sdl_test_executable(testgl SOURCES testgl.c NAME83 gl)
 add_sdl_test_executable(testgles SOURCES testgles.c NAME83 tstgles NAME83 gles)
 add_sdl_test_executable(testgpu_simple_clear SOURCES testgpu_simple_clear.c NAME83 gpuclear)
+add_sdl_test_executable(testgpu_timestamp_ext NONINTERACTIVE SOURCES testgpu_timestamp_ext.c NAME83 gputstamp)
 add_sdl_test_executable(testgpu_spinning_cube SOURCES testgpu_spinning_cube.c ${icon_png_header} DEPENDS generate-icon_png_header NAME83 gpucube)
 add_sdl_test_executable(testgpurender_effects MAIN_CALLBACKS NEEDS_RESOURCES TESTUTILS SOURCES testgpurender_effects.c NAME83 gpufx)
 add_sdl_test_executable(testgpurender_msdf MAIN_CALLBACKS NEEDS_RESOURCES TESTUTILS SOURCES testgpurender_msdf.c NAME83 gpumsdf)

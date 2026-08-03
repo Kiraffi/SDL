@@ -1679,13 +1679,13 @@ SDL_GPUCommandBuffer *SDL_AcquireGPUCommandBuffer(
     commandBufferHeader->render_pass.command_buffer = command_buffer;
     commandBufferHeader->compute_pass.command_buffer = command_buffer;
     commandBufferHeader->copy_pass.command_buffer = command_buffer;
+    commandBufferHeader->render_pass.in_progress = false;
+    commandBufferHeader->compute_pass.in_progress = false;
+    commandBufferHeader->copy_pass.in_progress = false;
 
     if (device->debug_mode) {
-        commandBufferHeader->render_pass.in_progress = false;
         commandBufferHeader->render_pass.graphics_pipeline = NULL;
-        commandBufferHeader->compute_pass.in_progress = false;
         commandBufferHeader->compute_pass.compute_pipeline = NULL;
-        commandBufferHeader->copy_pass.in_progress = false;
         commandBufferHeader->swapchain_texture_acquired = false;
         commandBufferHeader->submitted = false;
         commandBufferHeader->ignore_render_pass_texture_validation = false;
@@ -1907,9 +1907,9 @@ SDL_GPURenderPass *SDL_BeginGPURenderPass(
         depth_stencil_target_info);
 
     commandBufferHeader = (CommandBufferCommonHeader *)command_buffer;
+    commandBufferHeader->render_pass.in_progress = true;
 
     if (COMMAND_BUFFER_DEVICE->debug_mode) {
-        commandBufferHeader->render_pass.in_progress = true;
         for (Uint32 i = 0; i < num_color_targets; i += 1) {
             commandBufferHeader->render_pass.color_targets[i] = color_target_infos[i].texture;
         }
@@ -2419,9 +2419,9 @@ void SDL_EndGPURenderPass(
 
     RENDERPASS_DEVICE->EndRenderPass(
         RENDERPASS_COMMAND_BUFFER);
+    commandBufferCommonHeader->render_pass.in_progress = false;
 
     if (RENDERPASS_DEVICE->debug_mode) {
-        commandBufferCommonHeader->render_pass.in_progress = false;
         for (Uint32 i = 0; i < MAX_COLOR_TARGET_BINDINGS; i += 1)
         {
             commandBufferCommonHeader->render_pass.color_targets[i] = NULL;
@@ -2503,10 +2503,9 @@ SDL_GPUComputePass *SDL_BeginGPUComputePass(
         num_storage_buffer_bindings);
 
     commandBufferHeader = (CommandBufferCommonHeader *)command_buffer;
+    commandBufferHeader->compute_pass.in_progress = true;
 
     if (COMMAND_BUFFER_DEVICE->debug_mode) {
-        commandBufferHeader->compute_pass.in_progress = true;
-
         for (Uint32 i = 0; i < num_storage_texture_bindings; i += 1) {
             commandBufferHeader->compute_pass.read_write_storage_texture_bound[i] = true;
         }
@@ -2710,10 +2709,10 @@ void SDL_EndGPUComputePass(
 
     COMPUTEPASS_DEVICE->EndComputePass(
         COMPUTEPASS_COMMAND_BUFFER);
+    commandBufferCommonHeader = (CommandBufferCommonHeader *)COMPUTEPASS_COMMAND_BUFFER;
+    commandBufferCommonHeader->compute_pass.in_progress = false;
 
     if (COMPUTEPASS_DEVICE->debug_mode) {
-        commandBufferCommonHeader = (CommandBufferCommonHeader *)COMPUTEPASS_COMMAND_BUFFER;
-        commandBufferCommonHeader->compute_pass.in_progress = false;
         commandBufferCommonHeader->compute_pass.compute_pipeline = NULL;
         SDL_zeroa(commandBufferCommonHeader->compute_pass.sampler_bound);
         SDL_zeroa(commandBufferCommonHeader->compute_pass.read_only_storage_texture_bound);
@@ -2780,10 +2779,7 @@ SDL_GPUCopyPass *SDL_BeginGPUCopyPass(
         command_buffer);
 
     commandBufferHeader = (CommandBufferCommonHeader *)command_buffer;
-
-    if (COMMAND_BUFFER_DEVICE->debug_mode) {
-        commandBufferHeader->copy_pass.in_progress = true;
-    }
+    commandBufferHeader->copy_pass.in_progress = true;
 
     return (SDL_GPUCopyPass *)&(commandBufferHeader->copy_pass);
 }
@@ -3041,10 +3037,8 @@ void SDL_EndGPUCopyPass(
 
     COPYPASS_DEVICE->EndCopyPass(
         COPYPASS_COMMAND_BUFFER);
+    ((CommandBufferCommonHeader *)COPYPASS_COMMAND_BUFFER)->copy_pass.in_progress = false;
 
-    if (COPYPASS_DEVICE->debug_mode) {
-        ((CommandBufferCommonHeader *)COPYPASS_COMMAND_BUFFER)->copy_pass.in_progress = false;
-    }
 }
 
 void SDL_GenerateMipmapsForGPUTexture(
@@ -3520,6 +3514,123 @@ void SDL_ReleaseGPUFence(
     device->ReleaseFence(
         device->driverData,
         fence);
+}
+
+bool CARP_SDL_GetGPUTimestampProperties(
+    SDL_GPUDevice *device,
+    CARP_SDL_GPUTimestampProperties *out_properties)
+{
+    CHECK_DEVICE_MAGIC(device, false);
+
+    CHECK_PARAM(out_properties == NULL) {
+        SDL_InvalidParamError("out_properties");
+        return false;
+    }
+
+    return device->GetGPUTimestampProperties(
+        device,
+        out_properties);
+}
+
+CARP_SDL_GPUTimestampQueryPool *CARP_SDL_CreateGPUTimestampQueryPool(
+    SDL_GPUDevice *device,
+    Uint32 query_count)
+{
+    CHECK_DEVICE_MAGIC(device, NULL);
+
+    CHECK_PARAM(query_count == 0) {
+        SDL_InvalidParamError("query_count");
+        return NULL;
+    }
+
+    return (CARP_SDL_GPUTimestampQueryPool *)device->CreateGPUTimestampQueryPool(
+        device,
+        query_count);
+}
+
+void CARP_SDL_ReleaseGPUTimestampQueryPool(
+    SDL_GPUDevice *device,
+    CARP_SDL_GPUTimestampQueryPool *query_pool)
+{
+    if (query_pool == NULL) {
+        return;
+    }
+
+    CHECK_DEVICE_MAGIC(device, );
+
+    device->ReleaseGPUTimestampQueryPool(
+        device,
+        query_pool);
+}
+
+bool CARP_SDL_WriteGPUTimestamp(
+    SDL_GPUCommandBuffer *command_buffer,
+    CARP_SDL_GPUTimestampQueryPool *query_pool,
+    Uint32 query_index)
+{
+    CommandBufferCommonHeader *commandBufferHeader;
+
+    CHECK_PARAM(command_buffer == NULL) {
+        SDL_InvalidParamError("command_buffer");
+        return false;
+    }
+    CHECK_PARAM(query_pool == NULL) {
+        SDL_InvalidParamError("query_pool");
+        return false;
+    }
+
+    commandBufferHeader = (CommandBufferCommonHeader *)command_buffer;
+    if (commandBufferHeader->render_pass.in_progress ||
+        commandBufferHeader->compute_pass.in_progress ||
+        commandBufferHeader->copy_pass.in_progress) {
+        return SDL_SetError("GPU timestamps must be written outside a GPU pass");
+    }
+
+    return COMMAND_BUFFER_DEVICE->WriteGPUTimestamp(
+        command_buffer,
+        query_pool,
+        query_index);
+}
+
+bool CARP_SDL_CopyGPUTimestampResults(
+    SDL_GPUCopyPass *copy_pass,
+    CARP_SDL_GPUTimestampQueryPool *query_pool,
+    Uint32 first_query,
+    Uint32 query_count,
+    SDL_GPUBuffer *destination,
+    Uint32 destination_offset)
+{
+    CHECK_PARAM(copy_pass == NULL) {
+        SDL_InvalidParamError("copy_pass");
+        return false;
+    }
+    CHECK_PARAM(query_pool == NULL) {
+        SDL_InvalidParamError("query_pool");
+        return false;
+    }
+    CHECK_PARAM(query_count == 0) {
+        SDL_InvalidParamError("query_count");
+        return false;
+    }
+    CHECK_PARAM(destination == NULL) {
+        SDL_InvalidParamError("destination");
+        return false;
+    }
+    CHECK_PARAM((destination_offset % sizeof(Uint64)) != 0) {
+        SDL_InvalidParamError("destination_offset");
+        return false;
+    }
+    if (!((Pass *)copy_pass)->in_progress) {
+        return SDL_SetError("GPU timestamp results must be copied inside a GPU copy pass");
+    }
+
+    return COPYPASS_DEVICE->CopyGPUTimestampResults(
+        copy_pass,
+        query_pool,
+        first_query,
+        query_count,
+        destination,
+        destination_offset);
 }
 
 Uint32 SDL_CalculateGPUTextureFormatSize(
